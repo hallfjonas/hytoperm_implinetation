@@ -6,8 +6,8 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import json
-import RUN_LIMO_1
-from RUN_LIMO_1 import *
+import RUN_LIMO_sim
+from RUN_LIMO_sim import *
 
 def testTraj(tracker):
     # For a given trajectory that has been solved for this will test it
