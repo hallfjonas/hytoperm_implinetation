@@ -862,6 +862,7 @@ class Agent:
         self._gpp = gpp
    
     def computeVisitingSequence(self) -> None:
+        self.gpp()._plot_options.toggleAllPlotting(False)
         self.gpp().solveTSP()
         self._tvs = self.gpp().tsp().getTargetVisitingSequence()
 

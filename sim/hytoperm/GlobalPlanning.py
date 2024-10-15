@@ -15,10 +15,10 @@ _plotAttr = PlotAttributes()
 
 class PlotOptions:
     def __init__(self):
-        self.pbp : bool = True                                                 # plot best path
-        self.pae : bool = True                                                 # plot all edge lines
-        self.par : bool = True                                                 # plot active regions   
-        self.psr : bool = True                                                 # plot search regions
+        self.pbp : bool = False                                                 # plot best path
+        self.pae : bool = False                                                 # plot all edge lines
+        self.par : bool = False                                                 # plot active regions   
+        self.psr : bool = False                                                 # plot search regions
     
     # getters
     def plotAny(self) -> bool:
@@ -48,7 +48,7 @@ class RRBT:
         self._rttm : Dict[Region,Set[Tree]] = {}                                # region to node mapper
 
         # visualization
-        self._plot_options = None                                               # a plot options instance
+        self._plot_options = PlotOptions()                                      # a plot options instance
 
         # initialize
         self.initialize(world, initTree)
@@ -189,9 +189,12 @@ class RRBT:
             color: str
             ) -> None:
         child.setParent(parent, cost_to_parent)
-        parent.plotPathToParent(color=color)
-        plt.draw()
-        plt.pause(.1)
+
+        if self.plotOptions().pae:
+            parent.plotPathToParent(color=color)
+            plt.draw()
+            plt.pause(.1)
+
         if rtp is not None:
             child.getData().activate_region_to_parent(rtp)
             
