@@ -184,9 +184,10 @@ class Tracker:
                     self.x, xd, e_vel_prev, e_vel_int)
 
                 # Apply the controls to the nonlinear model
-                self.x = nonlinearModelStep(
+                # self.x = nonlinearModelStep(
+                # self.x, np.array([[u_steer], [u_vel]]), self.dt)
+                self.x = unicycleModelStep(
                     self.x, np.array([[u_steer], [u_vel]]), self.dt)
-                # self.x = unicycleModelStep(self.x,np.array([[u_steer],[u_vel]]),self.dt)
 
                 # Plot the agents position
                 # if using the original plot from the hytoperm output,scale the plot
