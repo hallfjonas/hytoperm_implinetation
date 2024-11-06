@@ -6,10 +6,11 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import json
-import RUN_LIMO_1
-from RUN_LIMO_1 import *
+from test_sim import World
+import RUN_LIMO_sim
+from RUN_LIMO_sim import *
 
-def testTraj(tracker):
+def testTraj(tracker: Tracker):
     # For a given trajectory that has been solved for this will test it
     points,_ = loadPoints(1,6)
 
@@ -18,7 +19,7 @@ def testTraj(tracker):
     tracker.x = points[:,2:3]
 
     #this calls the tracking controller to follow the trajectorytracks the 
-    tracker.trackTrajectory(points[:,2:],stab_time = 10)
+    tracker.trackTrajectoryPID(points[:,2:],stab_time = 10)
 
 def angleCorrection(thetas):
     # This function ensures that each angle is represented with a value minimum distance form its neighbor.
@@ -158,9 +159,16 @@ def loadPoints(num,tot):
     #returned the stitched and unstitched trajectories
     return points,points_2
 
-
-
 if __name__ == "__main__":
     # When creating the tracker specify which limo you are using
+    world = World()
+
+    # Plot the world and trajectory
+    plt.ion()
+    world.plotWorld()
+    plt.show()
+
     tracker = Tracker("limo770")
     testTraj(tracker)
+
+    plt.ioff()

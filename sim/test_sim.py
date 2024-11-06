@@ -92,24 +92,15 @@ class World:
             with open(f'trial{num}/cycleInfo{num}_{count}_dynams.json', "w") as final:
                 json.dump(v.tolist(), final)
             count += 1
+        self.ex = ex
+        
+    def plotWorld(self):
+        ex = self.ex
         # plot the optimal cycle
         ex.agent().plotCycle()
-        plt.ioff()
-        plt.show()
         fig, ax = ex.plotWorld()
         ex.agent().plotSensorQuality()
         ex.agent().plotCycle()
-        #load the points for the tracker to follow
-        points,_ = loadPoints(2,len(ex.agent()._cycle._trajectorySegments))
-        #create a tracker, if running in simulation, the Limo name does not matter
-        tracker = Tracker("limo770")
-        #I have had issues with the first point in a traj, starting at the second or third point is a workaround that may no longer be needed
-        tracker.x = points[:,2:3]
-        # Follow using the PID, I found it works significantly better in this case than the LQR
-        tracker.trackTrajectoryPID(points[:,2:],ex,stab_time = 7,fig = fig)
-        #save the final trajectory figure
-        pickle.dump(fig,open(f'trial{num}/Worldplot{num}.pickle','wb'))
-        plt.show()
 
 #The following functions are documented in the run_cycle_sim.py file. For more information check there.
 def angleCorrection(thetas):

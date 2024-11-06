@@ -200,7 +200,7 @@ class Tracker:
                     plot_y.append(self.x[1, 0])
                 tl, = plt.plot(plot_x, plot_y, '-r', marker='*')
 
-                if count == stab_time:
+                if count == stab_time and fig is None:
                     plt.legend([wl, tl], ['waypoints', 'trajectory'])
 
                 plt.draw()
