@@ -26,8 +26,8 @@ import LIMO_LQR_phys
 import LIMO_PID_physclass Tracker:
     def __init__(
             self,
-            limo_name:str
-            ) -> None:
+            limo_name: str
+    ) -> None:
         """
         Tracker object used to follow a sequence of waypoints in a trajectory.
         Using this sends all the infrastructure necessary to receive pose
@@ -49,27 +49,26 @@ import LIMO_PID_physclass Tracker:
         # Define agent state
         self.speed = 0
         self.steering_angle = 0
-        self.x=np.array([
-                    [self.LIMO1.position_z],
-                    [self.LIMO1.position_x],
-                    [self.LIMO1.position_yaw],
-                    [self.speed]
-                ])
-        
+        self.x = np.array([
+            [self.LIMO1.position_z],
+            [self.LIMO1.position_x],
+            [self.LIMO1.position_yaw],
+            [self.speed]
+        ])
+
         # Create LQR controller object
         self.lqr = LIMO_LQR_1.LQR(dt=self.dt)
         self.pid = LIMO_PID_1.PID(dt=self.dt)
         self.theta_dot = 0
         # Get initial linearization
-        [self.A,self.B] = self.lqr.getAB(self.x[2,0])
-
+        [self.A, self.B] = self.lqr.getAB(self.x[2, 0])
 
     def trackTrajectoryLQR(
             self,
-            trajectory:np.ndarray,
-            stab_time:int = 27,
-            relin_steps:int = 1
-            ) -> None:
+            trajectory: np.ndarray,
+            stab_time: int = 27,
+            relin_steps: int = 1
+    ) -> None:
         """
         This function receives a trajectory of states and, using the motion capture
         to localize, sends control commands to the limo to track the trajectory.
@@ -85,73 +84,74 @@ import LIMO_PID_physclass Tracker:
         plot_x = []
         plot_y = []
 
-        plt.plot(trajectory[0],trajectory[1],'-g')
+        plt.plot(trajectory[0], trajectory[1], '-g')
         # iterate through sequence of waypoints
-        for i in range(0,trajectory.shape[1],4):
-            #isolate current waypoint
-            xd = trajectory[:,i:i+1]
+        for i in range(0, trajectory.shape[1], 4):
+            # isolate current waypoint
+            xd = trajectory[:, i:i+1]
 
             # Approach the next waypoint for stab_time time steps
-            for count in range(stab_time,1,-1):
+            for count in range(stab_time, 1, -1):
 
                 # Update position and speed from motion capture
                 # The speed is the previous velocity command
-                x=np.array([
+                x = np.array([
                     [self.LIMO1.position_z],
                     [self.LIMO1.position_x],
                     [self.LIMO1.position_yaw],
                     [self.speed]
                 ])
-        
-                # Relinearize and find new gain matrix if relin_steps time steps have passed
-                if count%relin_steps == 0:
-                    [self.A,self.B] = self.lqr.getAB(self.x[2,0])
-                    [self.A2,self.B2] = self.lqr.getAB(self.x_simp[2,0])
-                    K = self.lqr.getK(count,self.A,self.B)
-                    K2= self.lqr.getK(count,self.A2,self.B2)
 
+                # Relinearize and find new gain matrix if relin_steps time steps have passed
+                if count % relin_steps == 0:
+                    [self.A, self.B] = self.lqr.getAB(self.x[2, 0])
+                    [self.A2, self.B2] = self.lqr.getAB(self.x_simp[2, 0])
+                    K = self.lqr.getK(count, self.A, self.B)
+                    K2 = self.lqr.getK(count, self.A2, self.B2)
 
                 # Find the optimal control
                 # The control is the change in angular and linear velocities repectively
-                u1 = self.lqr.getControl(self.x,xd,K)
+                u1 = self.lqr.getControl(self.x, xd, K)
 
-                #Find change in steering steering angle based on desire
-                ang = math.atan2((u1[0,0])*self.lqr.L/2,u1[1,0])
-                
+                # Find change in steering steering angle based on desire
+                ang = math.atan2((u1[0, 0])*self.lqr.L/2, u1[1, 0])
+
                 # Update speed and steering angle
-                self.speed = u1[1,0]
+                self.speed = u1[1, 0]
 
-                #Ensure that inputs are within acceptable range
-                #This is an added redundancy to ensure the viability of control inputs
-                self.steering_angle = 0.7*np.clip(ang,-1.,1.)      
-                self.speed = np.clip(self.speed,-1.,1.)
+                # Ensure that inputs are within acceptable range
+                # This is an added redundancy to ensure the viability of control inputs
+                self.steering_angle = 0.7*np.clip(ang, -1., 1.)
+                self.speed = np.clip(self.speed, -1., 1.)
 
-                plot_x.append(self.x[0,0])
-                plot_y.append(self.x[1,0])
-                plt.plot(plot_x,plot_y,'-r')
+                plot_x.append(self.x[0, 0])
+                plot_y.append(self.x[1, 0])
+                plt.plot(plot_x, plot_y, '-r')
                 plt.draw()
-                drive_msg_LIMO1 = self.LIMO1.control(self.speed,self.steering_angle)
+                drive_msg_LIMO1 = self.LIMO1.control(
+                    self.speed, self.steering_angle)
                 self.LIMO1.pub.publish(drive_msg_LIMO1)
                 time.sleep(self.dt)
 
         # After following the trajectory, stop
-        drive_msg_LIMO1 = self.LIMO1.control(0,0)
+        drive_msg_LIMO1 = self.LIMO1.control(0, 0)
         self.LIMO1.pub.publish(drive_msg_LIMO1)
         plt.ioff()
 
-        plt.plot(plot_x,plot_y,'-r')
-        plt.plot(trajectory[0],trajectory[1],'-g')
+        plt.plot(plot_x, plot_y, '-r')
+        plt.plot(trajectory[0], trajectory[1], '-g')
         plt.show()
+
     def trackTrajectoryPID(
             self,
-            trajectory:np.ndarray,
+            trajectory: np.ndarray,
             ex=None,
-            stab_time:int = 27,
-            relin_steps:int = 1,
-            fig = None,
-            ax = None,
-            
-            ) -> None:
+            stab_time: int = 27,
+            relin_steps: int = 1,
+            fig=None,
+            ax=None,
+
+    ) -> None:
         """
         This function receives a trajectory of states and, using the motion capture
         to localize, sends control commands to the limo to track the trajectory.
@@ -165,54 +165,54 @@ import LIMO_PID_physclass Tracker:
             -> int
         """
 
-        
-        
         plot_x = []
         plot_y = []
 
-        plt.plot(trajectory[0],trajectory[1],'-g')
+        plt.plot(trajectory[0], trajectory[1], '-g')
         # iterate through sequence of waypoints
-        for i in range(0,trajectory.shape[1],4):
-            #isolate current waypoint
-            xd = trajectory[:,i:i+1]
-            #find the initial error values for the PID
-            #explanations of the error found in the LIMO_PID_phys.py file
+        for i in range(0, trajectory.shape[1], 4):
+            # isolate current waypoint
+            xd = trajectory[:, i:i+1]
+            # find the initial error values for the PID
+            # explanations of the error found in the LIMO_PID_phys.py file
             unit_theta = np.array([
-                [math.cos(self.x[2,0])],
-                [math.sin(self.x[2,0])]
+                [math.cos(self.x[2, 0])],
+                [math.sin(self.x[2, 0])]
             ])
             ref = xd[:2]-self.x[:2]
-            e_steer_prev = np.cross(unit_theta.T,ref.T)[0]
+            e_steer_prev = np.cross(unit_theta.T, ref.T)[0]
             e_steer_int = 0
-            e_vel_prev= np.dot(unit_theta.T,ref)[0,0]
+            e_vel_prev = np.dot(unit_theta.T, ref)[0, 0]
             e_vel_int = 0
 
             # Approach the next waypoint for stab_time time steps
-            for count in range(stab_time,1,-1):
-                #update pose from ROS
-                x=np.array([
-                     [self.LIMO1.position_z],
-                     [self.LIMO1.position_x],
-                     [self.LIMO1.position_yaw],
-                     [self.speed]
-                 ])
-                #Find change in steering steering angle based on desire
-                u_steer,e_steer_prev,e_steer_int = self.pid.steerControl(self.x,xd,e_steer_prev,e_steer_int)
-                u_vel,e_vel_prev,e_vel_int = self.pid.speedControl(self.x,xd,e_vel_prev,e_vel_int)
+            for count in range(stab_time, 1, -1):
+                # update pose from ROS
+                x = np.array([
+                    [self.LIMO1.position_z],
+                    [self.LIMO1.position_x],
+                    [self.LIMO1.position_yaw],
+                    [self.speed]
+                ])
+                # Find change in steering steering angle based on desire
+                u_steer, e_steer_prev, e_steer_int = self.pid.steerControl(
+                    self.x, xd, e_steer_prev, e_steer_int)
+                u_vel, e_vel_prev, e_vel_int = self.pid.speedControl(
+                    self.x, xd, e_vel_prev, e_vel_int)
 
-                plot_x.append(self.x[0,0])
-                plot_y.append(self.x[1,0])
+                plot_x.append(self.x[0, 0])
+                plot_y.append(self.x[1, 0])
 
-                plt.plot(plot_x,plot_y,'-r')
+                plt.plot(plot_x, plot_y, '-r')
                 plt.draw()
 
-                #Use ROS to send controls to LIMO
-                drive_msg_LIMO1 = self.LIMO1.control(u_vel,u_steer)
+                # Use ROS to send controls to LIMO
+                drive_msg_LIMO1 = self.LIMO1.control(u_vel, u_steer)
                 self.LIMO1.pub.publish(drive_msg_LIMO1)
                 time.sleep(self.dt)
 
         # After following the trajectory, stop
-        drive_msg_LIMO1 = self.LIMO1.control(0,0)
+        drive_msg_LIMO1 = self.LIMO1.control(0, 0)
         self.LIMO1.pub.publish(drive_msg_LIMO1)
         plt.ioff()
         print('done')
@@ -227,9 +227,9 @@ if __name__ == '__main__':
     # Create a Tracker object
 
     tracker = Tracker("limo770")
-    
+
     # Define waypoints, ideally your planning algorithm will output waypoints
-    waypoint1  = np.array([
+    waypoint1 = np.array([
         [.5],
         [1],
         [np.pi/4],
@@ -243,7 +243,7 @@ if __name__ == '__main__':
     ])
 
     # Format waypoints to be as function expects
-    waypoints = np.hstack((waypoint1,waypoint2))
+    waypoints = np.hstack((waypoint1, waypoint2))
 
-    #Call the tracker to follow waypoints
+    # Call the tracker to follow waypoints
     tracker.trackTrajectory(waypoints)

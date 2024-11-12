@@ -52,7 +52,8 @@ class Tracker:
 
         # Create PID controller object
 
-        self.pid = LIMO_PID_sim.PID(dt=self.dt)
+        self.pid = LIMO_PID_sim.PID(
+            steer_kp=10, steer_ki=0, steer_kd=0, vel_kp=100, vel_ki=0, vel_kd=0, dt=self.dt)
         self.theta_dot = 0
 
     def trackTrajectoryLQR(
@@ -134,7 +135,6 @@ class Tracker:
             relin_steps: int = 1,
             fig=None,
             ax=None,
-
     ) -> None:
         """
         This function receives a trajectory of states and, using the motion capture
@@ -151,10 +151,13 @@ class Tracker:
         plot_x = []
         plot_y = []
 
+        fig, axs = plt.subplots(4, 2)
         # if plotting on an existing figure, you don't need to re-plot the trajectory
         if fig is not None:
             fig = plt.figure(1)
+
         else:
+            wl = axs[0, 0]  # wL not w"one"
             wl, = plt.plot(trajectory[0, :],
                            trajectory[1, :], '-g', marker='*')
 
@@ -177,15 +180,16 @@ class Tracker:
             # Approach the next waypoint for stab_time time steps
             for count in range(stab_time, 1, -1):
 
-                # Find find the controls from the PID
+                # Find the controls from the PID #error values,
                 u_steer, e_steer_prev, e_steer_int = self.pid.steerControl(
                     self.x, xd, e_steer_prev, e_steer_int)
                 u_vel, e_vel_prev, e_vel_int = self.pid.speedControl(
                     self.x, xd, e_vel_prev, e_vel_int)
 
+                values = [u_steer, e_steer_prev, e_steer_int,]
+
                 # Apply the controls to the nonlinear model
-                # self.x = nonlinearModelStep(
-                # self.x, np.array([[u_steer], [u_vel]]), self.dt)
+                # self.x = nonlinearModelStep(self.x, np.array([[u_steer], [u_vel]]) , self.dt)
                 self.x = unicycleModelStep(
                     self.x, np.array([[u_steer], [u_vel]]), self.dt)
 
@@ -198,6 +202,7 @@ class Tracker:
                 else:
                     plot_x.append(self.x[0, 0])
                     plot_y.append(self.x[1, 0])
+
                 tl, = plt.plot(plot_x, plot_y, '-r', marker='*')
 
                 if count == stab_time and fig is None:
@@ -205,7 +210,8 @@ class Tracker:
 
                 plt.draw()
                 plt.pause(0.1)
-                print(count)
+                # print(count)
+                print(u_vel)
 
                 # TODO(Justen):
                 # 1) Compute distance to waypoint
@@ -217,10 +223,16 @@ class Tracker:
                     break
 
         # plot final trajectory
-        plt.plot(plot_x, plot_y, '-r')
-        plt.plot(trajectory[0, :], trajectory[1, :], '-g')
-        plt.ioff()
-        plt.show()
+        fig, axs = plt.subplots(2, 4)
+        # axs[0, 0].plot(plot_x, plot_y, '-r')
+        # axs[0, 0].plot(trajectory[0, :], trajectory[1, :], '-g')
+        # axs[0, 0].ioff()
+        # axs[0, 0].gca().set_aspect('equal')
+
+        x = np.linspace(0, 2*np.pi, 400)
+        y = np.sin(x**2)
+        axs[1, 0].plot(x, y)
+        axs.show()
 
 
 def genCircleWaypoints(radius, num_waypoints, center: tuple):
@@ -293,6 +305,6 @@ if __name__ == '__main__':
     # ])
 
     # Call the tracker to follow waypoints
-    # waypoints = genCircleWaypoints(10, 25, (0, 0))
-    waypoints = genRandomWaypoints(10)
+    waypoints = genCircleWaypoints(10, 25, (0, 0))
+    # waypoints = genRandomWaypoints(5)
     tracker.trackTrajectoryPID(waypoints)
