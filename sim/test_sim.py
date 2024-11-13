@@ -52,7 +52,7 @@ class World:
         #set up the running animation
         plt.ion()
         #minimum trial number, if the trial already exists this, we automatically iterate up so there is no reason to change this
-        num = 1
+        self.trial = 1
         # generate experiment world, n_sets is the number of regions, and fraction is the percentage of regions containing targets
         ex = Experiment.generate(n_sets=15,fraction=0.2)
         #eliminate hybrid dynamics
@@ -69,29 +69,29 @@ class World:
         #create a new directory to store trajectories
         fin = False
         while not fin:
-            if os.path.isdir(f'trial{num}'):
-                num += 1
+            if os.path.isdir(f'trial{self.trial}'):
+                self.trial += 1
             else:
-                os.mkdir(f'trial{num}')
+                os.mkdir(f'trial{self.trial}')
                 fin = True
                 
         count = 0
         # In this we store the points and controls in the cycle as a whole.
         # Storing both the points found as a whole and from stitching together individual segments gives additional trouble shooting options
-        with open(f'trial{num}/cycleInfo{num}_total_points.json', "w") as final:
+        with open(f'trial{self.trial}/cycleInfo{self.trial}_total_points.json', "w") as final:
             json.dump(ex.agent()._cycle.pTrajectory.x.tolist(), final)
-        with open(f'trial{num}/cycleInfo{num}_total_cntrls.json', "w") as final:
+        with open(f'trial{self.trial}/cycleInfo{self.trial}_total_cntrls.json', "w") as final:
             json.dump(ex.agent()._cycle.uTrajectory.x.tolist(), final)
         #store trajectory information segment by segment        
         for ts in ex.agent()._cycle._trajectorySegments:
             ptraj = ts.pTrajectory.x
             utraj = ts.uTrajectory.x
             v = getDynamics(ex.world(),ptraj)
-            with open(f'trial{num}/cycleInfo{num}_{count}_points.json', "w") as final:
+            with open(f'trial{self.trial}/cycleInfo{self.trial}_{count}_points.json', "w") as final:
                 json.dump(ptraj.tolist(), final)
-            with open(f'trial{num}/cycleInfo{num}_{count}_cntrls.json', "w") as final:
+            with open(f'trial{self.trial}/cycleInfo{self.trial}_{count}_cntrls.json', "w") as final:
                 json.dump(utraj.tolist(), final)
-            with open(f'trial{num}/cycleInfo{num}_{count}_dynams.json', "w") as final:
+            with open(f'trial{self.trial}/cycleInfo{self.trial}_{count}_dynams.json', "w") as final:
                 json.dump(v.tolist(), final)
             count += 1
         self.ex = ex
