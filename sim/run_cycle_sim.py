@@ -66,13 +66,10 @@ def getVels(controls, hybrid_dynamics):
         vels[0,i] = np.linalg.norm(vel)
     return vels
     
-def loadPoints(num,tot):
+def loadPoints(num):
     # Retrieves the points from the JSON files they are stored in
     # The num input is the trial number. The trajectory will be stored in the directory 
-    # with this trial number. tot is the number of trajectory segments. Each trajectory segment
-    # will have different dynamics. For this reason, the option to use a total trajectory 
-    # where we do not directly receive region dynamics is given as well as a point 
-    # trajectory based on segment where the dynamics can be retrieved is also given
+    # with this trial number.
 
     #We start with loading the trajectory from individual segments
     points_dict = {}
@@ -81,22 +78,32 @@ def loadPoints(num,tot):
     vels_dict = {}
 
     #Iterate through the number number of segments
-    for count in range(tot):
-        #save the trajectory points
-        f=open(f'trial{num}/cycleInfo{num}_{count}_points.json','r')
-        points_dict[count] = json.loads(f.readline())
+    count = 0
+    while True:
 
-        # save the trajectory controls
-        f=open(f'trial{num}/cycleInfo{num}_{count}_cntrls.json','r')
-        uts_dict[count] = json.loads(f.readline())
+        try:
+            #save the trajectory points
+            f=open(f'trial{num}/cycleInfo{num}_{count}_points.json','r')
+            points_dict[count] = json.loads(f.readline())
 
-        # Get the hybrid dynamics of the region
-        f=open(f'trial{num}/cycleInfo{num}_{count}_dynams.json','r')
-        hds_dict[count] = np.array(json.loads(f.readline()))
-        #reshape the hybrid dynamics to a 2D vector
-        hds_dict[count].reshape((2,1))
-        #Use the controls and dynamics to get the desired velocity
-        vels_dict[count] = getVels(np.array(uts_dict[count]),hds_dict[count])
+            # save the trajectory controls
+            f=open(f'trial{num}/cycleInfo{num}_{count}_cntrls.json','r')
+            uts_dict[count] = json.loads(f.readline())
+
+            # Get the hybrid dynamics of the region
+            f=open(f'trial{num}/cycleInfo{num}_{count}_dynams.json','r')
+            hds_dict[count] = np.array(json.loads(f.readline()))
+            #reshape the hybrid dynamics to a 2D vector
+            hds_dict[count].reshape((2,1))
+            #Use the controls and dynamics to get the desired velocity
+            vels_dict[count] = getVels(np.array(uts_dict[count]),hds_dict[count])
+            
+            count += 1
+
+        except:
+            break
+
+    tot = count
 
     # compose points and velocities into a single array
     pts = np.array(points_dict[0])
@@ -104,6 +111,8 @@ def loadPoints(num,tot):
     for count in range(tot-1):
         pts = np.hstack((pts,np.array(points_dict[count+1])))
         vels = np.hstack((vels,np.array(vels_dict[count+1])))
+
+    return pts, None
 
     # Find the thetas based on the points
     thetas = getThetas(pts)
@@ -163,12 +172,16 @@ if __name__ == "__main__":
     # When creating the tracker specify which limo you are using
     world = World()
 
-    # Plot the world and trajectory
-    plt.ion()
-    world.plotWorld()
-    plt.show()
+    # # Plot the world and trajectory
+    # plt.ion()
+    # world.plotWorld()
+    # plt.show()
 
     tracker = Tracker("limo770")
-    testTraj(tracker)
+    
+    # For a given trajectory that has been solved for this will test it
+    points,_ = loadPoints(world.trial)
 
+    #this calls the tracking controller to follow the trajectory
+    tracker.trackTrajectoryPID(points[:,:])
     plt.ioff()
