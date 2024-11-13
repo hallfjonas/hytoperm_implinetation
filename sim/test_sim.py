@@ -62,6 +62,8 @@ class World:
         #use the rbbt to find a visiting sequence
         ex.agent().computeVisitingSequence()
         #optimize the monitoring segments
+
+        ex.agent().op.optimization_iters = 10
         ex.agent().optimizeCycle()
 
         #create a new directory to store trajectories
