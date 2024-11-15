@@ -53,7 +53,7 @@ class Tracker:
         # Create PID controller object
 
         self.pid = LIMO_PID_sim.PID(
-            steer_kp=10, steer_ki=0, steer_kd=0, vel_kp=100, vel_ki=0, vel_kd=0, dt=self.dt)
+            steer_kp=1, steer_ki=0.1, steer_kd=0, vel_kp=1, vel_ki=0.1, vel_kd=0, dt=self.dt)
         self.theta_dot = 0
 
     def trackTrajectoryLQR(
@@ -135,7 +135,7 @@ class Tracker:
             relin_steps: int = 1,
             fig=None,
             ax=None,
-    ) -> None:
+    ) -> list:
         """
         This function receives a trajectory of states and, using the motion capture
         to localize, sends control commands to the limo to track the trajectory.
@@ -151,15 +151,13 @@ class Tracker:
         plot_x = []
         plot_y = []
 
-        fig, axs = plt.subplots(4, 2)
-        # if plotting on an existing figure, you don't need to re-plot the trajectory
-        if fig is not None:
-            fig = plt.figure(1)
-
-        else:
-            wl = axs[0, 0]  # wL not w"one"
-            wl, = plt.plot(trajectory[0, :],
-                           trajectory[1, :], '-g', marker='*')
+        values = []
+        Values_u_steer = []
+        Values_u_vel = []
+        Values_x = []
+        Values_new_x = []
+        Values_t = []
+        t = 0
 
         # iterate through sequence of waypoints
         for i in range(trajectory.shape[1]):
@@ -180,38 +178,25 @@ class Tracker:
             # Approach the next waypoint for stab_time time steps
             for count in range(stab_time, 1, -1):
 
-                # Find the controls from the PID #error values,
+                # Find the controls from the PID # u(t) output values, errors, integral error
                 u_steer, e_steer_prev, e_steer_int = self.pid.steerControl(
                     self.x, xd, e_steer_prev, e_steer_int)
                 u_vel, e_vel_prev, e_vel_int = self.pid.speedControl(
                     self.x, xd, e_vel_prev, e_vel_int)
 
-                values = [u_steer, e_steer_prev, e_steer_int,]
+                Values_u_steer.append(u_steer)
+                Values_u_vel.append(u_vel)
+                Values_x.append(self.x)
+                Values_new_x.append(xd)
+                Values_t.append(t)
 
                 # Apply the controls to the nonlinear model
                 # self.x = nonlinearModelStep(self.x, np.array([[u_steer], [u_vel]]) , self.dt)
+                t = t+self.dt
+                # print(t)
+
                 self.x = unicycleModelStep(
                     self.x, np.array([[u_steer], [u_vel]]), self.dt)
-
-                # Plot the agents position
-                # if using the original plot from the hytoperm output,scale the plot
-                # This is the case if a figure is passed
-                if fig is not None:
-                    plot_x.append((self.x[0, 0]+2.5)/5.)
-                    plot_y.append((self.x[1, 0]+2.5)/5.)
-                else:
-                    plot_x.append(self.x[0, 0])
-                    plot_y.append(self.x[1, 0])
-
-                tl, = plt.plot(plot_x, plot_y, '-r', marker='*')
-
-                if count == stab_time and fig is None:
-                    plt.legend([wl, tl], ['waypoints', 'trajectory'])
-
-                plt.draw()
-                plt.pause(0.1)
-                # print(count)
-                print(u_vel)
 
                 # TODO(Justen):
                 # 1) Compute distance to waypoint
@@ -221,18 +206,102 @@ class Tracker:
                 dist = np.linalg.norm(xd[0:2, 0] - self.x[0:2, 0])
                 if dist < 0.5:
                     break
+        # puts each list of all values for each step into one list
+        values = [Values_u_steer, Values_u_vel,
+                  Values_x, Values_new_x, Values_t]
+        return values
 
-        # plot final trajectory
-        fig, axs = plt.subplots(2, 4)
-        # axs[0, 0].plot(plot_x, plot_y, '-r')
-        # axs[0, 0].plot(trajectory[0, :], trajectory[1, :], '-g')
-        # axs[0, 0].ioff()
-        # axs[0, 0].gca().set_aspect('equal')
 
-        x = np.linspace(0, 2*np.pi, 400)
-        y = np.sin(x**2)
-        axs[1, 0].plot(x, y)
-        axs.show()
+def plot(values) -> None:  # values = u_steer, u_vel, self.x, xd, t
+
+    # gets an array of each timestep values, corresponding each index to each next time step
+    u_steer = values[0]
+    u_vel = values[1]
+    pos = values[2]  # pos = [x,y, heading angle, ang vel.]
+    x = []
+    y = []
+    targetpos = values[3]
+    xd = []
+    yd = []
+    t = values[4]
+    count = 0
+
+    for i in pos:
+        # count = t.index(i)
+        x.append(i[0])
+        y.append(i[1])
+    for j in targetpos:
+        xd.append(j[0])
+        yd.append(j[1])
+
+    fig, axs = plt.subplots(2, 2, figsize=(10, 10))
+    timesteps = values[4]  # list of t
+    # print(timesteps)
+    axs[0, 0].plot(t, u_steer)
+    axs[0, 1].plot(t, u_vel)
+    axs[1, 0].plot(xd, yd, 'r*')
+    axs[1, 0].plot(x, y)
+    axs[1, 0].set_aspect('equal')
+
+    # axs[1, 1].plot(t, targetpos)
+
+    axs[0, 0].set_title('Axis [0, 0]')
+    axs[0, 1].set_title('Axis [0, 0]')
+    axs[1, 0].set_title('Axis [0, 0]')
+    axs[1, 1].set_title('Axis [0, 0]')
+    # axs[2, 0].set_title('Axis [0, 0]')
+    # axs[2, 1].set_title('Axis [0, 0]')
+    # axs[3, 0].set_title('Axis [0, 0]')
+    # axs[3, 1].set_title('Axis [0, 0]')
+
+    plt.tight_layout()
+    plt.show()
+
+    plot_x = []
+    plot_y = []
+
+    # # if plotting on an existing figure, you don't need to re-plot the trajectory
+    # if fig is not None:
+    #     fig = plt.figure(1)
+    # else:
+    #     wl = axs[0, 0]  # wL not w"one"
+    #     wl, = plt.plot(trajectory[0, :],
+    #                     trajectory[1, :], '-g', marker='*')
+
+    # Plot the agents position
+    # if using the original plot from the hytoperm output,scale the plot
+    # This is the case if a figure is passed
+    # plot_x = []
+    # plot_y = []
+
+    # if fig is not None:
+    #     plot_x.append((self.x[0, 0]+2.5)/5.)
+    #     plot_y.append((self.x[1, 0]+2.5)/5.)
+    # else:
+    #     plot_x.append(self.x[0, 0])
+    #     plot_y.append(self.x[1, 0])
+
+    # tl, = plt.plot(plot_x, plot_y, '-r', marker='*')
+
+    # if count == stab_time and fig is None:
+    #     plt.legend([wl, tl], ['waypoints', 'trajectory'])
+
+    # plt.draw()
+    # plt.pause(0.1)
+    # print(count)
+
+    #  # plot final trajectory
+    #         fig, axs = plt.subplots(2, 4)
+    #         # axs[0, 0].plot(plot_x, plot_y, '-r')
+    #         # axs[0, 0].plot(trajectory[0, :], trajectory[1, :], '-g')
+    #         # axs[0, 0].ioff()
+    #         # axs[0, 0].gca().set_aspect('equal')
+
+    #         x = np.linspace(0, 2*np.pi, 400)
+    #         y = np.sin(x**2)
+    #         axs[1, 0].plot(x, y)
+    #         axs.show()
+    return
 
 
 def genCircleWaypoints(radius, num_waypoints, center: tuple):
@@ -305,6 +374,7 @@ if __name__ == '__main__':
     # ])
 
     # Call the tracker to follow waypoints
-    waypoints = genCircleWaypoints(10, 25, (0, 0))
-    # waypoints = genRandomWaypoints(5)
-    tracker.trackTrajectoryPID(waypoints)
+    # waypoints = genCircleWaypoints(10, 5000, (0, 0))
+    waypoints = genRandomWaypoints(5)
+    data = tracker.trackTrajectoryPID(waypoints)
+    plot(data)

@@ -40,6 +40,7 @@ class PID:
 
         # Find vector from robot to desired point
         ref = x_d[:2]-x[:2]
+        ref = ref/np.linalg.norm(ref)
 
         # Steering error is the cross-product
         e = np.cross(unit_theta.T, ref.T)[0]
@@ -78,8 +79,8 @@ class PID:
 
         # Velocity error is the dot product
         e = np.dot(unit_theta.T, ref)[0, 0]
-        if e < 0:
-            e = 0
+        # if e < 0:
+        #     e = 0
 
         # Update the integral of the error
         e_int = prev_int + e*self.dt
@@ -92,9 +93,10 @@ class PID:
         # Find the VELOCITY control
         u_vel = self.vel_kp*e+self.vel_ki*e_int+self.vel_kd*e_der
 
-        # The velocity ranges from -1.0 to 1.0 meters/second
+        # The velocity ranges from 0 to 7 m/s
+        # (Prevents robot from going backwards) (if robot tries to move back, it stops and steerPID takes over and robot just rotates in place)
         # Clip to ensure we fall within that range
-        u_vel = max(min(u_vel, 5.0), -5.0)
+        u_vel = max(min(u_vel, 7.0), 0)
 
         # Return control value and updated error and error integral values
         # to prepare for the next step
