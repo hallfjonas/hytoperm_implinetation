@@ -38,9 +38,10 @@ class Tracker:
             -> str
         """
 
-        # Frequency at which commands are sent to limo in Hz
-        self.transmissionRate = 10
+        # Frequency at which commands are sent to limo in Hz (max is 10hz in real robot) (in proportion to scale of world)
+        self.transmissionRate = 100
         self.dt = 1/self.transmissionRate
+        # self.dt = 1e-5  # delete when move to real robot 1e-5 = 10khz
         # self.rate = rospy.Rate(self.transmissionRate)
 
         # Define agent state
@@ -54,7 +55,7 @@ class Tracker:
         # Create PID controller object
 
         self.pid = LIMO_PID_sim.PID(
-            steer_kp=1, steer_ki=0.1, steer_kd=0, vel_kp=1, vel_ki=0.1, vel_kd=0, dt=self.dt)
+            steer_kp=10, steer_ki=0.0, steer_kd=0, vel_kp=1, vel_ki=0.0, vel_kd=0, dt=self.dt)
         self.theta_dot = 0
 
     def trackTrajectoryLQR(
@@ -205,10 +206,9 @@ class Tracker:
 
                 # np is numpy class, linalg is method in numpy (np) class, xd is waypoints value - self.x coordinate value = distance
                 dist = np.linalg.norm(xd[0:2, 0] - self.x[0:2, 0])
-                if dist < 0.5:
+                if dist < 0.01:
                     break
-            if i == 2:
-                break
+
         # puts each list of all values for each step into one list
         values = [Values_u_steer, Values_u_vel,
                   Values_x, Values_new_x, Values_t]
@@ -335,7 +335,7 @@ def plotCyclesim(values, world: World) -> None:  # values = u_steer, u_vel, self
     axs[0, 0].plot(t, u_steer)
     axs[0, 1].plot(t, u_vel)
     axs[1, 0] = world.plotWorld()  # returns ax (world plot)
-    axs[1, 0].plot(xd, yd, 'r:')
+    axs[1, 0].plot(xd, yd, 'r*')
     axs[1, 0].plot(x, y)
 
     # axs[1, 0].set_aspect('equal')
