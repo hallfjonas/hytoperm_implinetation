@@ -55,7 +55,8 @@ class World:
         ex = Experiment.generate(n_sets=15,fraction=0.2)
         #eliminate hybrid dynamics
         zeroRegions(ex.world())
-        fig, ax = ex.plotWorld()
+        fig, ax = plt.subplots()
+        ex.plotWorld()
         ex.agent().plotSensorQuality()
         #use the rbbt to find a visiting sequence
         ex.agent().computeVisitingSequence()

@@ -21,6 +21,7 @@ import LIMO_LQR_sim
 import LIMO_PID_sim
 from nonLinModel import *
 from test_sim import World
+from hytoperm import Experiment
 
 
 class Tracker:
@@ -308,7 +309,7 @@ def plotLimosim(values) -> None:  # values = u_steer, u_vel, self.x, xd, t
     return
 
 
-def plotCyclesim(values, world: World) -> None:  # values = u_steer, u_vel, self.x, xd, t
+def plotCyclesim(values, world: World = None, ex: Experiment = None) -> None:  # values = u_steer, u_vel, self.x, xd, t
     # gets an array of each timestep values, corresponding each index to each next time step
     u_steer = values[0]
     u_vel = values[1]
@@ -334,11 +335,12 @@ def plotCyclesim(values, world: World) -> None:  # values = u_steer, u_vel, self
     # print(timesteps)
     axs[0, 0].plot(t, u_steer)
     axs[0, 1].plot(t, u_vel)
-    axs[1, 0] = world.plotWorld()  # returns ax (world plot)
+
+    ex = ex if ex is not None else world.ex if world is not None else None
+    ex.plotWorld(ax=axs[1, 0])
     axs[1, 0].plot(xd, yd, 'r*')
     axs[1, 0].plot(x, y)
-
-    # axs[1, 0].set_aspect('equal')
+    axs[1, 0].set_aspect('equal')
 
     # axs[1, 1].plot(t, targetpos)
 
