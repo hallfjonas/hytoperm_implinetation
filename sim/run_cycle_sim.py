@@ -9,6 +9,7 @@ import json
 import test_sim
 import RUN_LIMO_sim
 from RUN_LIMO_sim import *
+from hytoperm import Experiment
 
 
 def testTraj(tracker: Tracker):
@@ -178,22 +179,23 @@ def loadPoints(num):
 
 
 if __name__ == "__main__":
+    trial = 2
+
+    # Try to load points from specified trial. If it doesn't exist, we will generate a new trial
+    try:
+        points, _ = loadPoints(trial)
+        ex = Experiment.deserialize(f"trial{trial}/Experiment.pickle")
+    except:
+        world = test_sim.World(trial = trial)
+        world.solve()
+        world.export()
+        points, _ = loadPoints(world.trial)
+        ex = world.ex
+        
+
     # When creating the tracker specify which limo you are using
-    world = test_sim.World()
-
-    # # Plot the world and trajectory
-    # plt.ion()
-    # world.plotWorld()
-    # plt.show()
-
     tracker = Tracker("limo770")
-
-    # For a given trajectory that has been solved for this will test it
-    # world object, trial number is the attribute of the object
-    points, _ = loadPoints(world.trial)
-    #  points = points[:, 0:3]
 
     # this calls the tracking controller to follow the trajectory
     data = tracker.trackTrajectoryPID(points[:, :])
-    plt.ioff()
-    plotCyclesim(data, world)
+    plotCyclesim(data, ex=ex)
