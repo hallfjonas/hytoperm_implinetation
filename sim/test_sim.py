@@ -11,6 +11,7 @@ import pickle
 from RUN_LIMO_sim import *
 import json
 import os
+import glob 
 
 
 def expandSwitchingSegment(ptraj, utraj, num_points):
@@ -53,32 +54,50 @@ class World:
     to ease retrieving information in larger programs.
     """
 
-    def __init__(self) -> None:
-        # set up the running animation
-        plt.ion()
+    def __init__(self, **kwargs) -> None:
+        
         # minimum trial number, if the trial already exists this, we automatically iterate up so there is no reason to change this
-        self.trial = 1
+        self.trial = self.getTrial(kwargs.get('trial'))
+
         # generate experiment world, n_sets is the number of regions, and fraction is the percentage of regions containing targets
-        ex = Experiment.generate(n_sets=15, fraction=0.2)
+        self.ex: Experiment = kwargs.get('ex', Experiment.generate(n_sets=15, fraction=0.2))
+        
         # eliminate hybrid dynamics
-        zeroRegions(ex.world())
-        fig, ax = ex.plotWorld()
-        ex.agent().plotSensorQuality()
-        # use the rbbt to find a visiting sequence
-        ex.agent().computeVisitingSequence()
-        # optimize the monitoring segments
-
-        ex.agent().op.optimization_iters = 10
-        ex.agent().optimizeCycle()
-
+        zeroRegions(self.ex.world())
+        
+    def getTrial(self, trial):
+        if trial is not None:
+            return trial
+        
+        trial = 1
         # create a new directory to store trajectories
         fin = False
         while not fin:
-            if os.path.isdir(f'trial{self.trial}'):
-                self.trial += 1
+            if os.path.isdir(f'trial{trial}'):
+                trial += 1
             else:
-                os.mkdir(f'trial{self.trial}')
-                fin = True
+                os.mkdir(f'trial{trial}')
+                return trial
+
+
+    def solve(self, **kwargs):
+        ex = self.ex
+        ex.agent().computeVisitingSequence()
+        
+        op = kwargs.get('op')
+        if op is not None:
+            ex.agent().op = op
+        else:
+            ex.agent().op.optimization_iters = 10
+
+        ex.agent().optimizeCycle()
+
+    def export(self, auto_delete: bool = True):
+        ex = self.ex
+
+        if auto_delete:
+            for f in glob.glob(f'trial{self.trial}/*'):
+                os.remove(f)
 
         count = 0
         # In this we store the points and controls in the cycle as a whole.
@@ -99,20 +118,20 @@ class World:
             with open(f'trial{self.trial}/cycleInfo{self.trial}_{count}_dynams.json', "w") as final:
                 json.dump(v.tolist(), final)
             count += 1
-        self.ex = ex
+        
+        self.ex.serialize(f'trial{self.trial}/Experiment.pickle')
 
     def plotWorld(self):
         ex = self.ex
         # plot the optimal cycle
         ex.agent().plotCycle()
-        fig, ax = ex.plotWorld()
+        fig, ax = plt.subplots()
+        ex.plotWorld()
         ex.agent().plotSensorQuality()
         ex.agent().plotCycle()
-        return ax
+        return fig, ax
 
 # The following functions are documented in the run_cycle_sim.py file. For more information check there.
-
-
 def angleCorrection(thetas):
     out = np.zeros(thetas.shape)
     out[0, 0] = thetas[0, 0]
@@ -202,4 +221,7 @@ def loadPoints(num, tot):
 
 if __name__ == "__main__":
     wrld = World()
-    exit()
+    wrld.solve()
+    wrld.export()
+    wrld.plotWorld()
+    plt.show()
