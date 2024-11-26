@@ -1,6 +1,7 @@
 
-# ignore cycleinfo files
+# ignore trial files
 cycleInfo*
+trial*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
