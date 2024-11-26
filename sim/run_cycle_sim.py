@@ -191,6 +191,7 @@ if __name__ == "__main__":
     # For a given trajectory that has been solved for this will test it
     # world object, trial number is the attribute of the object
     points, _ = loadPoints(world.trial)
+    #  points = points[:, 0:3]
 
     # this calls the tracking controller to follow the trajectory
     data = tracker.trackTrajectoryPID(points[:, :])
