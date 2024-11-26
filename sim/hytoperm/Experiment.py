@@ -199,12 +199,11 @@ class Experiment:
             fill_empty_regions=True,
             plot_partition=True,
             plot_targets=True,
-            plot_vector_field=True
+            plot_vector_field=True,
+            ax = None
             ) -> Tuple[plt.Figure, plt.Axes]:
-        fig, ax = plt.subplots()
+        ax = getAxes(ax)
         ax.set_aspect('equal', 'box')
-        fig.tight_layout()
-        ax.axis('off')
         ax.set_xlim(self._domain.xmin()*1.01, self._domain.xmax()*1.01)
         ax.set_ylim(self._domain.ymin()*1.01, self._domain.ymax()*1.01)
 
@@ -222,8 +221,6 @@ class Experiment:
             plot_targets=plot_targets,
             plot_vector_field=plot_vector_field
             )
-
-        return fig, ax
 
     def zoomToTargetRegion(self, ax : plt.Axes, name : str):
         target = self._world.getTargetByName(name)
