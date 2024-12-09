@@ -186,12 +186,11 @@ if __name__ == "__main__":
         points, _ = loadPoints(trial)
         ex = Experiment.deserialize(f"trial{trial}/Experiment.pickle")
     except:
-        world = test_sim.World(trial = trial)
+        world = test_sim.World(trial=trial)
         world.solve()
         world.export()
         points, _ = loadPoints(world.trial)
         ex = world.ex
-        
 
     # When creating the tracker specify which limo you are using
     tracker = Tracker("limo770")

@@ -14,6 +14,7 @@ Original code received from Sienna Chien, original authors not listed.
 Description: Waypoint tracking for limos in Rastic
 """
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 import numpy as np
 import math
 import time
@@ -56,7 +57,7 @@ class Tracker:
         # Create PID controller object
 
         self.pid = LIMO_PID_sim.PID(
-            steer_kp=10, steer_ki=0.0, steer_kd=0, vel_kp=1, vel_ki=0.0, vel_kd=0, dt=self.dt)
+            steer_kp=0.1, steer_ki=0.0, steer_kd=0, vel_kp=0.1, vel_ki=0.0, vel_kd=0, dt=self.dt)
         self.theta_dot = 0
 
     def trackTrajectoryLQR(
@@ -205,7 +206,7 @@ class Tracker:
                 # 1) Compute distance to waypoint
                 # 2) If distance small, then break. Otherwise continue
 
-                # np is numpy class, linalg is method in numpy (np) class, xd is waypoints value - self.x coordinate value = distance
+                # np is numpy class, linalg is method in numpy (np) class, distance = xd is waypoints value - self.x coordinate value
                 dist = np.linalg.norm(xd[0:2, 0] - self.x[0:2, 0])
                 if dist < 0.01:
                     break
@@ -250,14 +251,23 @@ def plotLimosim(values) -> None:  # values = u_steer, u_vel, self.x, xd, t
 
     # axs[1, 1].plot(t, targetpos)
 
-    axs[0, 0].set_title('Axis [0, 0]')
-    axs[0, 1].set_title('Axis [0, 0]')
-    axs[1, 0].set_title('Axis [0, 0]')
+    axs[0, 0].set_title(
+        'AngularTurning PID_Controller Value [rad/s] vs. Time[s]')
+    axs[0, 1].set_title('LinearSpeed PID_Controller Value [m/s] vs. Time[s]')
+    axs[1, 0].set_title(
+        'Simulation Environment. (Red = waypoints, blue = robot path)')
     axs[1, 1].set_title('Axis [0, 0]')
-    # axs[2, 0].set_title('Axis [0, 0]')
-    # axs[2, 1].set_title('Axis [0, 0]')
-    # axs[3, 0].set_title('Axis [0, 0]')
-    # axs[3, 1].set_title('Axis [0, 0]')
+
+    for ax in axs.flat:
+        title = ax.get_title()
+        if 'v' in title:
+            index = title.find('v')
+            x_label = title[:index]
+            y_label = title.split()[-1]
+
+        ax.set(xlabel={x_label}, ylabel={y_label})
+
+    axs[1, 0].set(xlabel='x-axis', ylabel='y-axis')
 
     plt.tight_layout()
     plt.show()
@@ -309,7 +319,8 @@ def plotLimosim(values) -> None:  # values = u_steer, u_vel, self.x, xd, t
     return
 
 
-def plotCyclesim(values, world: World = None, ex: Experiment = None) -> None:  # values = u_steer, u_vel, self.x, xd, t
+# values = u_steer, u_vel, self.x, xd, t
+def plotCyclesim(values, world: World = None, ex: Experiment = None) -> None:
     # gets an array of each timestep values, corresponding each index to each next time step
     u_steer = values[0]
     u_vel = values[1]
@@ -333,25 +344,36 @@ def plotCyclesim(values, world: World = None, ex: Experiment = None) -> None:  #
     fig, axs = plt.subplots(2, 2, figsize=(10, 10))
     timesteps = values[4]  # list of t
     # print(timesteps)
+
     axs[0, 0].plot(t, u_steer)
-    axs[0, 1].plot(t, u_vel)
+    axs[1, 0].plot(t, u_vel)
 
     ex = ex if ex is not None else world.ex if world is not None else None
-    ex.plotWorld(ax=axs[1, 0])
-    axs[1, 0].plot(xd, yd, 'r*')
-    axs[1, 0].plot(x, y)
-    axs[1, 0].set_aspect('equal')
+    ex.plotWorld(ax=axs[0, 1])
+    axs[0, 1].plot(xd, yd, 'r*')
+    axs[0, 1].plot(x, y)
+    # axs[0, 1].set_aspect('equal')
 
     # axs[1, 1].plot(t, targetpos)
 
-    axs[0, 0].set_title('Axis [0, 0]')
-    axs[0, 1].set_title('Axis [0, 0]')
-    axs[1, 0].set_title('Axis [0, 0]')
-    axs[1, 1].set_title('Axis [0, 0]')
-    # axs[2, 0].set_title('Axis [0, 0]')
-    # axs[2, 1].set_title('Axis [0, 0]')
-    # axs[3, 0].set_title('Axis [0, 0]')
-    # axs[3, 1].set_title('Axis [0, 0]')
+    axs[0, 0].set_title(
+        'AngularTurning PID_Controller Value [rad/s] vs. Time[s]')
+    axs[1, 0].set_title('LinearSpeed PID_Controller Value [m/s] vs. Time[s]')
+    axs[0, 1].set_title(
+        'Simulation Environment. (Red = waypoints, blue = robot path)')
+    axs[1, 1].axis('off')
+
+    for ax in axs.flat:
+        title = ax.get_title()
+        if 'v' in title:
+            index = title.find('v')
+            y_label = title[:index]
+            x_label = title.split()[-1]
+
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+
+    axs[0, 1].set(xlabel='x-axis', ylabel='y-axis')
 
     plt.tight_layout()
     plt.show()
@@ -428,9 +450,8 @@ def genCircleWaypoints(radius, num_waypoints, center: tuple):
         waypoints.append(waypoint)  # inputs all the waypoints into a list
     return np.hstack(waypoints)
 
+
 # ***TASK*** function to generate random waypoints, manually input #of waypoints
-
-
 def genRandomWaypoints(num_Waypoints):
     x_points = np.random.uniform(0, 10, size=num_Waypoints)
     y_points = np.random.uniform(0, 10, size=num_Waypoints)
@@ -443,7 +464,7 @@ def genRandomWaypoints(num_Waypoints):
             [0],          # heading angle of second waypoint(?)
             [0]                 # angular velocity of second waypoint(?)
         ])
-        waypoints.append(waypoint)  # inputs all the waypoints into a list\
+        waypoints.append(waypoint)  # inputs all the waypoints into a list
     return np.hstack(waypoints)
 
 
