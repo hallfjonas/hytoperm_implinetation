@@ -9,7 +9,8 @@ import json
 import test_sim
 import RUN_LIMO_sim
 from RUN_LIMO_sim import *
-from hytoperm import Experiment
+from hytoperm import Experiment, Domain, extendKeywordArgs
+from LIMO_PID_sim import PID
 
 
 def testTraj(tracker: Tracker):
@@ -177,24 +178,53 @@ def loadPoints(num):
     # returned the stitched and unstitched trajectories
     return points, points_2
 
+class ProblemSetup:
+    def __init__(self, **kwargs):
 
+        # World building
+        rastic = Domain(xrange=[0,9], yrange=[0,6])                             # The default domain: our RASTIC environment at BU
+        self._domain: Domain = kwargs.get('domain', rastic)                     # The domain specifications of the experiment
+        self._nsets: int = kwargs.get('n_sets', 15)                             # The number of sets in the partition
+        self._fraction: float = kwargs.get('fraction', 0.2)                     # The fraction of the sets that should be target sets
+        self._trial: int = kwargs.get('trial', 1)                               # The trial number
+        self._limo_name: str = "limo770"                                        # The name of the limo
+
+        # Controller specifications
+        self._dt: float = kwargs.get('dt', 0.01)                                # The time step
+        self._PID: PID = kwargs.get('pid', PID())                               # The PID controller
+        self._pid_tolerance: float = kwargs.get('pid_tolerance', 0.1)           # The tolerance for the PID controller (convergence radius to waypoints)    
+        
+
+    def getKwargs(self) -> dict:
+        return {
+            'domain': self._domain,
+            'n_sets': self._nsets,
+            'fraction': self._fraction,
+            'trial': self._trial,
+            'limo_name': self._limo_name,
+            'dt': self._dt,
+            'pid': self._PID,
+            'pid_tolerance': self._pid_tolerance,
+        }
+    
 if __name__ == "__main__":
-    trial = 2
-
+    
+    # Specify everything about the experiment
+    ps = ProblemSetup()
+    
     # Try to load points from specified trial. If it doesn't exist, we will generate a new trial
     try:
-        points, _ = loadPoints(trial)
-        ex = Experiment.deserialize(f"trial{trial}/Experiment.pickle")
+        points, _ = loadPoints(ps._trial)
+        ex = Experiment.deserialize(f"trial{ps._trial}/Experiment.pickle")
     except:
-        world = test_sim.World(trial = trial)
+        world = test_sim.World(**ps.getKwargs())
         world.solve()
         world.export()
         points, _ = loadPoints(world.trial)
         ex = world.ex
-        
 
     # When creating the tracker specify which limo you are using
-    tracker = Tracker("limo770")
+    tracker = Tracker(**ps.getKwargs())
 
     # this calls the tracking controller to follow the trajectory
     data = tracker.trackTrajectoryPID(points[:, :])
