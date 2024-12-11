@@ -26,25 +26,22 @@ from hytoperm import Experiment
 
 
 class Tracker:
-    def __init__(
-            self,
-            limo_name: str
-    ) -> None:
+    def __init__(self, **kwargs) -> None:
         """
         Tracker object used to follow a sequence of waypoints in a trajectory.
         Using this sends all the infrastructure necessary to receive pose
         information form the motion capture and send controls to the robot to track a trajectory
-
-        :param limo_name: ROS node and topic name for the Limo you are using.
-            This should match the name on the motion capture software.
-            -> str
         """
 
         # Frequency at which commands are sent to limo in Hz (max is 10hz in real robot) (in proportion to scale of world)
-        self.transmissionRate = 100
-        self.dt = 1/self.transmissionRate
-        # self.dt = 1e-5  # delete when move to real robot 1e-5 = 10khz
+        self.dt = kwargs.get('dt', 1e-2)
+        self.transmissionRate = kwargs.get('transmissionRate', None)
+        if self.transmissionRate is not None:
+            self.transmissionRate = 1/self.dt
+
         # self.rate = rospy.Rate(self.transmissionRate)
+
+        self.pid_tolerance = kwargs.get('pid_tolerance', 0.1)
 
         # Define agent state
         self.x = np.array([
@@ -55,11 +52,8 @@ class Tracker:
         ])
 
         # Create PID controller object
-
-        self.pid = LIMO_PID_sim.PID(
-            steer_kp=0.1, steer_ki=0.0, steer_kd=0, vel_kp=0.1, vel_ki=0.0, vel_kd=0, dt=self.dt)
-        self.theta_dot = 0
-
+        self.pid = kwargs.get('pid', LIMO_PID_sim.PID())
+        
     def trackTrajectoryLQR(
             self,
             trajectory: np.ndarray,
@@ -202,13 +196,9 @@ class Tracker:
                 self.x = unicycleModelStep(
                     self.x, np.array([[u_steer], [u_vel]]), self.dt)
 
-                # TODO(Justen):
-                # 1) Compute distance to waypoint
-                # 2) If distance small, then break. Otherwise continue
-
-                # np is numpy class, linalg is method in numpy (np) class, distance = xd is waypoints value - self.x coordinate value
+                # np is numpy class, linalg is method in numpy (np) class, xd is waypoints value - self.x coordinate value = distance
                 dist = np.linalg.norm(xd[0:2, 0] - self.x[0:2, 0])
-                if dist < 0.01:
+                if dist < self.pid_tolerance:
                     break
 
         # puts each list of all values for each step into one list

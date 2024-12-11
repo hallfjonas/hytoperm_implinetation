@@ -60,7 +60,11 @@ class World:
         self.trial = self.getTrial(kwargs.get('trial'))
 
         # generate experiment world, n_sets is the number of regions, and fraction is the percentage of regions containing targets
-        self.ex: Experiment = kwargs.get('ex', Experiment.generate(n_sets=15, fraction=0.2))
+        self.ex: Experiment = kwargs.get('ex', Experiment.generate(
+            n_sets=kwargs.get('n_sets', 15), 
+            fraction=kwargs.get('fraction', 0.2),
+            domain=kwargs.get('domain', None)
+        ))
         
         # eliminate hybrid dynamics
         zeroRegions(self.ex.world())
