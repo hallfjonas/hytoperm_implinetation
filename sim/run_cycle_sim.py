@@ -182,7 +182,7 @@ class ProblemSetup:
     def __init__(self, **kwargs):
 
         # World building
-        rastic = Domain(xrange=[0,9], yrange=[0,6])                             # The default domain: our RASTIC environment at BU
+        rastic = Domain(xrange=[-4.5,4.5], yrange=[-3,3])                       # The default domain: our RASTIC environment at BU
         self._domain: Domain = kwargs.get('domain', rastic)                     # The domain specifications of the experiment
         self._nsets: int = kwargs.get('n_sets', 15)                             # The number of sets in the partition
         self._fraction: float = kwargs.get('fraction', 0.2)                     # The fraction of the sets that should be target sets
