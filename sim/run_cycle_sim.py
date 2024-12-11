@@ -212,6 +212,9 @@ if __name__ == "__main__":
     # Specify everything about the experiment
     ps = ProblemSetup()
     
+    #### IF YOU WANT TO MAKE CHANGES TO SETUP CHANGE ps HERE ####
+    #### e.g., ps._dt = 0.1
+
     # Try to load points from specified trial. If it doesn't exist, we will generate a new trial
     try:
         points, _ = loadPoints(ps._trial)
