@@ -13,7 +13,7 @@ import math
 
 class PID:
     # The PID object
-    def __init__(self, steer_kp=1., steer_ki=0.0045, steer_kd=0.0017, vel_kp=1., vel_ki=0.0045, vel_kd=0.0017, dt=.01):
+    def __init__(self, steer_kp=1., steer_ki=0.0045, steer_kd=0 , vel_kp=1., vel_ki=0.0045, vel_kd=0.0017, dt=.01):
         # The init values are tunable, I settled on values that worked okay for me. Further tuning may be reasonable
 
         # The control gains for the steering input
@@ -24,7 +24,7 @@ class PID:
         # The control gains for the velocity input
         self.vel_kp = vel_kp
         self.vel_ki = vel_ki
-        self.vel_kd = vel_kd
+        self.vel_kd = vel_kd    
 
         # How many seconds before a new control is published
         self.dt = dt

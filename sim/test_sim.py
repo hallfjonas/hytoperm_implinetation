@@ -67,7 +67,7 @@ class World:
         ))
         
         # eliminate hybrid dynamics
-        zeroRegions(self.ex.world())
+        zeroRegions(self.ex.world() )
         
     def getTrial(self, trial):
         if trial is not None:

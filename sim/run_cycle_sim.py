@@ -1,5 +1,6 @@
 """
 This script can be used to follow a previously found trajectory
+Edited to visualize dynamics through simulation plotting from Justen Li.
 """
 
 import numpy as np
@@ -14,19 +15,19 @@ from LIMO_PID_sim import PID
 
 
 def testTraj(tracker: Tracker):
-    # For a given trajectory that has been solved for this will test it
+    # For a given trajectory that has been solved for, this will test it
     points, _ = loadPoints(1, 6)
 
     # this sets an initial point for use in simulation.
     # on real limos, this is not needed
     tracker.x = points[:, 2:3]
 
-    # this calls the tracking controller to follow the trajectorytracks the
+    # this calls the tracking controller to follow the trajectory tracks the
     tracker.trackTrajectoryPID(points[:, 2:], stab_time=10)
 
 
 def angleCorrection(thetas):
-    # This function ensures that each angle is represented with a value minimum distance form its neighbor.
+    # This function ensures that each angle is represented with a value minimum distance from its neighbor.
     # e.g. if your angle is 3pi/4, and you want to converge to pi,
     # this makes sure that the angle listed is not -pi.
     out = np.zeros(thetas.shape)
@@ -178,22 +179,32 @@ def loadPoints(num):
     # returned the stitched and unstitched trajectories
     return points, points_2
 
+
+#Change Rastic floor size here
 class ProblemSetup:
     def __init__(self, **kwargs):
 
         # World building
-        rastic = Domain(xrange=[-4.5,4.5], yrange=[-3,3])                       # The default domain: our RASTIC environment at BU
-        self._domain: Domain = kwargs.get('domain', rastic)                     # The domain specifications of the experiment
-        self._nsets: int = kwargs.get('n_sets', 15)                             # The number of sets in the partition
-        self._fraction: float = kwargs.get('fraction', 0.2)                     # The fraction of the sets that should be target sets
-        self._trial: int = kwargs.get('trial', 1)                               # The trial number
-        self._limo_name: str = "limo770"                                        # The name of the limo
+        # The default domain: our RASTIC environment at BU
+        rastic = Domain(xrange=[-4.5, 4.5], yrange=[-3, 3])
+        # The domain specifications of the experiment
+        self._domain: Domain = kwargs.get('domain', rastic)
+        # The number of sets in the partition
+        self._nsets: int = kwargs.get('n_sets', 15)
+        # The fraction of the sets that should be target sets
+        self._fraction: float = kwargs.get('fraction', 0.2)
+        # The trial number
+        self._trial: int = kwargs.get('trial', 1)
+        # The name of the limo
+        self._limo_name: str = "limo770"
 
         # Controller specifications
-        self._dt: float = kwargs.get('dt', 0.01)                                # The time step
-        self._PID: PID = kwargs.get('pid', PID())                               # The PID controller
-        self._pid_tolerance: float = kwargs.get('pid_tolerance', 0.1)           # The tolerance for the PID controller (convergence radius to waypoints)    
-        
+        # The time step
+        self._dt: float = kwargs.get('dt', 0.01)
+        # The PID controller
+        self._PID: PID = kwargs.get('pid', PID())
+        # if robot is a certain distance from waypoint       # The tolerance for the PID controller (convergence radius to waypoints)
+        self._pid_tolerance: float = kwargs.get('pid_tolerance', 0.1)
 
     def getKwargs(self) -> dict:
         return {
@@ -206,14 +217,18 @@ class ProblemSetup:
             'pid': self._PID,
             'pid_tolerance': self._pid_tolerance,
         }
-    
+
+
 if __name__ == "__main__":
-    
+
     # Specify everything about the experiment
     ps = ProblemSetup()
-    
-    #### IF YOU WANT TO MAKE CHANGES TO SETUP CHANGE ps HERE ####
-    #### e.g., ps._dt = 0.1
+
+    #### IF YOU WANT TO MAKE CHANGES TO SETUP, CHANGE ps HERE ####
+    # e.g., ps._dt = 0.1
+    ps._trial = "trial2"
+    # create new PID object to edit parameters
+    ps._PID = PID(0.1, 0, 0, 0.1, 0, 0, ps._dt)
 
     # Try to load points from specified trial. If it doesn't exist, we will generate a new trial
     try:
@@ -221,7 +236,7 @@ if __name__ == "__main__":
         ex = Experiment.deserialize(f"trial{ps._trial}/Experiment.pickle")
     except:
         world = test_sim.World(**ps.getKwargs())
-        world.solve()
+        world.solve()   
         world.export()
         points, _ = loadPoints(world.trial)
         ex = world.ex
