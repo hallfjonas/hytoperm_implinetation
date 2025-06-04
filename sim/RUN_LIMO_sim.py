@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 This file is used to control a simulation of the AgileX Limos in Rastic to follow a series of Waypoints.
 It uses the dynamic model found in nonlinModel.py to find the simulate the motion of the agent.
@@ -26,6 +24,7 @@ from hytoperm import Experiment
 
 
 class Tracker:
+
     def __init__(self, **kwargs) -> None:
         """
         Tracker object used to follow a sequence of waypoints in a trajectory.
@@ -467,7 +466,7 @@ if __name__ == '__main__':
     # Create a Tracker object
 
     #do Tracker() 
-    tracker = Tracker("limo770")
+    tracker = Tracker()
 
     # Define waypoints, ideally your planning algorithm will output waypoints
 
