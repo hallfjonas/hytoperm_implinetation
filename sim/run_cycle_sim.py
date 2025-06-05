@@ -125,7 +125,7 @@ def loadPoints(num):
         vels = np.hstack((vels, np.array(vels_dict[count+1])))
 
     return pts, None
-
+'''
     # Find the thetas based on the points
     thetas = getThetas(pts)
 
@@ -178,7 +178,7 @@ def loadPoints(num):
 
     # returned the stitched and unstitched trajectories
     return points, points_2
-
+    '''
 
 #Change Rastic floor size here
 class ProblemSetup:
@@ -194,7 +194,7 @@ class ProblemSetup:
         # The fraction of the sets that should be target sets
         self._fraction: float = kwargs.get('fraction', 0.2)
         # The trial number
-        self._trial: int = kwargs.get('trial', 1)
+        self._trial: int = kwargs.get('trial', 5)
         # The name of the limo
         self._limo_name: str = "limo770"
 
@@ -226,7 +226,7 @@ if __name__ == "__main__":
 
     #### IF YOU WANT TO MAKE CHANGES TO SETUP, CHANGE ps HERE ####
     # e.g., ps._dt = 0.1
-    ps._trial = "trial2"
+ 
     # create new PID object to edit parameters
     ps._PID = PID(0.1, 0, 0, 0.1, 0, 0, ps._dt)
 
