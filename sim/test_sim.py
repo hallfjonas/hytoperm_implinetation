@@ -13,7 +13,6 @@ import json
 import os
 import glob 
 
-
 def expandSwitchingSegment(ptraj, utraj, num_points):
     # this method is meant for the switching segments. The original code has saves only the
     # first and last points contained in teach segment, this expands it to a tunamble number of points

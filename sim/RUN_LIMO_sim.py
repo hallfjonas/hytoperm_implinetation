@@ -467,8 +467,9 @@ if __name__ == '__main__':
 
     # Create a Tracker object
 
-    #do Tracker() 
-    tracker = Tracker("limo770")
+    #do Tracker()
+    tracker = Tracker()
+    #tracker = Tracker("limo770")
 
     # Define waypoints, ideally your planning algorithm will output waypoints
 

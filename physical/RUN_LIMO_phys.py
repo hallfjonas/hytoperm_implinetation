@@ -23,7 +23,10 @@ from ackermann_msgs.msg import AckermannDrive
 import rospy
 from LIMO_ROS_SETUP import LIMO
 import LIMO_LQR_phys
-import LIMO_PID_physclass Tracker:
+import LIMO_PID_phys
+from LIMO_PID_phys import PID
+
+class Tracker:
     def __init__(
             self,
             limo_name: str
@@ -37,12 +40,13 @@ import LIMO_PID_physclass Tracker:
             This should match the name on the motion capture software.
             -> str
         """
+        self.pid = PID()
 
         # Create ROS node to communicate with the limo robot
         self.LIMO1 = LIMO(limo_name)
 
         # Frequency at which commands are sent to limo in Hz
-        self.transmissionRate = 10
+        self.transmissionRate = 30
         self.dt = 1/self.transmissionRate
         self.rate = rospy.Rate(self.transmissionRate)
 
@@ -56,12 +60,15 @@ import LIMO_PID_physclass Tracker:
             [self.speed]
         ])
 
-        # Create LQR controller object
-        self.lqr = LIMO_LQR_1.LQR(dt=self.dt)
-        self.pid = LIMO_PID_1.PID(dt=self.dt)
-        self.theta_dot = 0
-        # Get initial linearization
-        [self.A, self.B] = self.lqr.getAB(self.x[2, 0])
+        # # Create LQR controller object
+        # self.lqr = LIMO_LQR_1.LQR(dt=self.dt)
+        # self.pid = LIMO_PID_1.PID(dt=self.dt)
+        # self.theta_dot = 0
+        # # Get initial linearization
+        # [self.A, self.B] = self.lqr.getAB(self.x[2, 0])
+
+    def trackTrajectory(self, trajectory, *args, **kwargs):
+        return self.trackTrajectoryPID(trajectory, *args, **kwargs)
 
     def trackTrajectoryLQR(
             self,

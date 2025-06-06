@@ -32,6 +32,9 @@ def getDynamics(world,traj):
 
     #the first point in a segment may lie on a border and return the wrong dynamics,
     #choosing the second point helps ensure that we are in the correct regions
+
+    if traj.shape[1] < 2:
+        raise ValueError("Trajectory segment has fewer than 2 points.")
     p = traj[:,1:2]
     dynamics = world.getRegion(p).dynamics().v()
     return dynamics
@@ -53,6 +56,8 @@ class World:
         num = 1
         # generate experiment world, n_sets is the number of regions, and fraction is the percentage of regions containing targets
         ex = Experiment.generate(n_sets=15,fraction=0.2)
+
+        
         #eliminate hybrid dynamics
         zeroRegions(ex.world())
         fig, ax = plt.subplots()
@@ -83,6 +88,11 @@ class World:
         for ts in ex.agent()._cycle._trajectorySegments:
             ptraj = ts.pTrajectory.x
             utraj = ts.uTrajectory.x
+            # Validation: skip if the trajectory segment has less than 2 points
+            if ptraj.shape[1] < 2 or utraj.shape[1] < 2:
+                print(f"[WARN] Skipping segment {count}: too few points.")
+                continue
+
             v = getDynamics(ex.world(),ptraj)
             with open(f'trial{num}/cycleInfo{num}_{count}_points.json', "w") as final:
                 json.dump(ptraj.tolist(), final)
@@ -157,12 +167,16 @@ def loadPoints(num,tot):
         vels = np.hstack((vels,np.array(vels_dict[count+1])))
     thetas = getThetas(pts)
     thetas = angleCorrection(thetas)
-    points = np.vstack((5*pts,thetas))
+
+    scale_factor = 10.0  # you can change this
+
+    points = np.vstack((scale_factor * pts, thetas))
+
     if points.shape[1] != vels.shape[1]:
         min_shape = min(points.shape[1],vels.shape[1])
         points = points[:,:min_shape]
         vels = vels[:,:min_shape]
-    points = np.vstack((points,5*vels))
+    points = np.vstack((points, scale_factor * vels))
 
     hd = np.array([[0.0],[0.0]])
     f = open(f'trial{num}/cycleInfo{num}_total_points.json','r')
@@ -172,12 +186,14 @@ def loadPoints(num,tot):
     thetas_2 = getThetas(pts_2)
     thetas_2 = angleCorrection(thetas_2)
     vels_2 = getVels(uts_2,hd)
-    points_2 = np.vstack((5*pts_2,thetas_2))
+    points_2 = np.vstack((scale_factor * pts_2, thetas_2))
+
     if points_2.shape[1] != vels_2.shape[1]:
         min_shape = min(points_2.shape[1],vels_2.shape[1])
         points_2 = points_2[:,:min_shape]
         vels_2 = vels_2[:,:min_shape]
-    points_2 = np.vstack((points_2,5*vels_2))
+    points_2 = np.vstack((points_2, scale_factor * vels_2))
+
     
     return points,points_2
 if __name__ == "__main__":

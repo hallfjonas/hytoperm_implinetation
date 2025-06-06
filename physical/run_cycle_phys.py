@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 """
 Once a trajectory is found, this script allows you to track it with a Limo robot
 """
@@ -7,14 +7,18 @@ import math
 import matplotlib.pyplot as plt
 import LIMO_LQR_phys
 from LIMO_LQR_phys import *
+import LIMO_PID_phys
+from LIMO_PID_phys import *
 import RUN_LIMO_phys
-import json
 from RUN_LIMO_phys import *
+import json
 import pickle
+import glob
+import os
 
 def testTraj(tracker):
     # For a given trajectory that has been solved for this will test it
-    points,_ = loadPoints(1,6)
+    points,_ = loadPoints(2)
     
     tracker.trackTrajectoryPID(points[:,2:],stab_time = 7)
 
@@ -62,7 +66,7 @@ def getVels(controls, hybrid_dynamics):
         vels[0,i] = np.linalg.norm(vel)
     return vels
 
-def loadPoints(num,tot):
+def loadPoints(num,tot=None):
     # Retrieves the points from the JSON files they are stored in
     # The num input is the trial number. The trajectory will be stored in the directory 
     # with this trial number. tot is the number of trajectory segments. Each trajectory segment
@@ -75,6 +79,19 @@ def loadPoints(num,tot):
     uts_dict = {}
     hds_dict = {}
     vels_dict = {}
+
+    if tot is None:
+    # Count only complete sets of files
+        files = glob.glob(f'trial{num}/cycleInfo{num}_*_points.json')
+        complete_counts = [
+            int(f.split('_')[-2])
+            for f in files
+            if os.path.exists(f.replace('_points.json', '_cntrls.json')) and
+            os.path.exists(f.replace('_points.json', '_dynams.json'))
+        ]
+        tot = max(complete_counts) + 1 if complete_counts else 0
+
+
 
     #Iterate through the number number of segments
     for count in range(tot):
@@ -89,9 +106,16 @@ def loadPoints(num,tot):
         
         # Get the hybrid dynamics of the region
         f=open(f'trial{num}/cycleInfo{num}_{count}_dynams.json','r')
+        
+        '''
+        Apparently does not do anything said by ChatGPT??? Replaced with line below
         hds_dict[count] = np.array(json.loads(f.readline()))
         #reshape the hybrid dynamics to a 2D vector
         hds_dict[count].reshape((2,1))
+        '''
+        hds_dict[count] = np.array(json.loads(f.readline())).reshape((2,1))  # ✅ actually reshapes
+        
+
         #Use the controls and dynamics to get the desired velocity
         vels_dict[count] = getVels(np.array(uts_dict[count]),hds_dict[count])
 
@@ -159,5 +183,5 @@ def loadPoints(num,tot):
 
 if __name__ == "__main__":
     #place the number of the Limo that you are using here
-    tracker = Tracker("limo777")
+    tracker = Tracker("limo780")
     testTraj(tracker)
