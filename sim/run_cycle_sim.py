@@ -194,7 +194,7 @@ class ProblemSetup:
         # The fraction of the sets that should be target sets
         self._fraction: float = kwargs.get('fraction', 0.2)
         # The trial number
-        self._trial: int = kwargs.get('trial', 5)
+        self._trial: int = kwargs.get('trial', 1)
         # The name of the limo
         self._limo_name: str = "limo770"
 

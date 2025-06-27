@@ -23,7 +23,8 @@ from ackermann_msgs.msg import AckermannDrive
 import rospy
 from LIMO_ROS_SETUP import LIMO
 import LIMO_LQR_phys
-import LIMO_PID_physclass Tracker:
+import LIMO_PID_phys
+class Tracker:
     def __init__(
             self,
             limo_name: str
