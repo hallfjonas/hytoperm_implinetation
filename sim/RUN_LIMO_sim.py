@@ -195,7 +195,7 @@ class Tracker:
                 # print(t)
 
                 self.x = unicycleModelStep(
-                    self.x, np.array([[u_steer], [u_vel]]), self.dt)
+                    self.x, np.array([[u_steer], [u_vel]]), self.dt)  #current_pos + control_vels = new_pos 
 
                 # np is numpy class, linalg is method in numpy (np) class, xd is waypoints value - self.x coordinate value = distance
                 dist = np.linalg.norm(xd[0:2, 0] - self.x[0:2, 0])

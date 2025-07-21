@@ -246,8 +246,8 @@ class Experiment:
     
     # static methods
     @staticmethod
-    def deserialize(fileame : str):
-        with open(fileame, "rb") as f:
+    def deserialize(filename : str):
+        with open(filename, "rb") as f:
             return pickle.load(f)
     
     @staticmethod

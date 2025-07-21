@@ -337,7 +337,7 @@ class CPRegion(Region):
     def assignPoint(self, p : np.ndarray) -> None:
         if not isinstance(p, np.ndarray):
             raise ValueError("p must be a numpy array.")
-        if not self.contains(p):
+        if not self.contains(p): #Need self.contains(p) = true so whole condition is false, hence no exception is raised.
             raise ValueError("p must be contained in the region.")
         self._p = p
 
